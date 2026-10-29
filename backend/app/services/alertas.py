@@ -5,8 +5,8 @@
 que si la cola reintenta un trabajo no se duplican avisos ya entregados.
 
 Cambios respecto al pseudocódigo del PRD:
-- Una emergencia fuera de toda geocerca ya no se descarta: avisa a los TENANT_ADMIN.
-- Las emergencias avisan siempre a los TENANT_ADMIN, además del cliente de la bodega.
+- Una emergencia fuera de toda geocerca ya no se descarta: avisa a los ADMINISTRADOR.
+- Las emergencias avisan siempre a los ADMINISTRADOR, además del cliente de la bodega.
 - La hora del mute se toma de `timestamp_campo` en la zona horaria del tenant.
 - El fin del mute es exclusivo (mute 22:00-06:00 ya no silencia las 06:00:00).
 - Una rutina que llega con mucho retraso (sin señal) no se notifica en tiempo real.
@@ -100,7 +100,7 @@ def decidir(
             envios.append(Envio(admin_id, "WHATSAPP", "plantilla_emergencia_v1"))
         return Decision("ENVIADO" if envios else "SIN_DESTINATARIO", envios)
 
-    # RUTINA_PASO: solo al cliente dueño de la bodega.
+    # RUTINA_PASO: solo al dueño de la nave.
     if cliente_id is None:
         return Decision("SIN_DESTINATARIO")
     if retraso_min > max_retraso_rutina_min:
@@ -157,7 +157,7 @@ def procesar_reporte(
             db.scalars(
                 select(Usuario.id).where(
                     Usuario.tenant_id == reporte.tenant_id,
-                    Usuario.rol == "TENANT_ADMIN",
+                    Usuario.rol == "ADMINISTRADOR",
                     Usuario.status == "active",
                 )
             )

@@ -84,7 +84,7 @@ def crear_usuario(
         )
         db.add(u)
         db.flush()
-        if rol == "CLIENTE_FINAL":
+        if rol == "DUENO_NAVE":
             db.add(ConfiguracionAlertas(cliente_id=u.id, tenant_id=tenant_id))
         if fcm:
             db.add(DispositivoPush(tenant_id=tenant_id, usuario_id=u.id, fcm_token=fcm))
@@ -104,10 +104,8 @@ def parque(client):
     t = crear_tenant("parque-norte")
     ids = {
         "tenant": t,
-        "admin": crear_usuario(t, "admin@norte.mx", "TENANT_ADMIN", "+528110000001", "fcm-admin"),
-        "cliente": crear_usuario(
-            t, "cliente@norte.mx", "CLIENTE_FINAL", "+528110000002", "fcm-cli"
-        ),
+        "admin": crear_usuario(t, "admin@norte.mx", "ADMINISTRADOR", "+528110000001", "fcm-admin"),
+        "cliente": crear_usuario(t, "cliente@norte.mx", "DUENO_NAVE", "+528110000002", "fcm-cli"),
         "guardia": crear_usuario(t, "guardia@norte.mx", "GUARDIA"),
     }
     h = {

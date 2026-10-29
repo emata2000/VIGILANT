@@ -16,6 +16,18 @@ respetando su horario de silencio.
 | App del guardia (Kotlin) | Pendiente |
 | Panel web | Pendiente |
 
+## Roles
+
+| Rol | Quién es | Qué puede hacer |
+| --- | --- | --- |
+| `ADMINISTRADOR` | Administrador del parque o de la empresa de seguridad | Da de alta guardias y dueños, dibuja las naves (geocercas) y los checkpoints, ve toda la bitácora |
+| `DUENO_NAVE` | Dueño o inquilino de una nave industrial | Recibe alertas de su nave, configura su horario de silencio, ve la bitácora de su nave |
+| `GUARDIA` | Guardia en patrullaje | Envía rondines, escaneos y emergencias desde la app |
+
+Además existe un `SUPER_ADMIN` interno, para el operador de la plataforma: da de alta empresas
+nuevas (tenants) y su primer administrador. No se puede crear desde la API; solo con
+`python -m app.cli crear-superadmin`.
+
 ## Estructura
 
 ```

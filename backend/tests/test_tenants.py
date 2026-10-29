@@ -12,7 +12,7 @@ from tests.conftest import DENTRO_8, crear_tenant, crear_usuario, token
 
 def _otro_parque(client):
     t = crear_tenant("parque-sur", zona="America/Tijuana")
-    crear_usuario(t, "admin@sur.mx", "TENANT_ADMIN")
+    crear_usuario(t, "admin@sur.mx", "ADMINISTRADOR")
     crear_usuario(t, "guardia@sur.mx", "GUARDIA")
     return t, {
         "admin": token(client, "parque-sur", "admin@sur.mx"),
@@ -148,7 +148,7 @@ def test_superadmin_crea_tenant_y_admin(client):
             "email": "Admin@Este.mx",
             "password": "secreto-123",
             "nombre": "Admin",
-            "rol": "TENANT_ADMIN",
+            "rol": "ADMINISTRADOR",
             "tenant_id": tid,
         },
     )
@@ -161,3 +161,34 @@ def test_superadmin_crea_tenant_y_admin(client):
         ).status_code
         == 403
     )
+
+
+def test_nadie_crea_super_admin_por_api(parque, client):
+    r = client.post(
+        "/v1/usuarios",
+        headers=parque["h"]["admin"],
+        json={
+            "email": "otro-root@norte.mx",
+            "password": "secreto-123",
+            "nombre": "X",
+            "rol": "SUPER_ADMIN",
+        },
+    )
+    assert r.status_code == 422
+
+
+def test_admin_da_de_alta_un_dueno_de_nave(parque, client):
+    r = client.post(
+        "/v1/usuarios",
+        headers=parque["h"]["admin"],
+        json={
+            "email": "dueno2@norte.mx",
+            "password": "secreto-123",
+            "nombre": "Dueño 2",
+            "rol": "DUENO_NAVE",
+        },
+    )
+    assert r.status_code == 201, r.text
+    h = token(client, "parque-norte", "dueno2@norte.mx")
+    assert client.get("/v1/me/alertas", headers=h).json()["recibir_rutina_push"] is True
+    assert client.post("/v1/usuarios", headers=h, json={}).status_code in (403, 422)

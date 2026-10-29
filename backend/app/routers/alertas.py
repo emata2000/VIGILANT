@@ -5,9 +5,9 @@ from app.deps import UsuarioActual, db_tenant, requiere_rol
 from app.models import ConfiguracionAlertas
 from app.schemas import ConfigAlertasIO
 
-router = APIRouter(prefix="/v1/clientes/me", tags=["preferencias de alertas"])
+router = APIRouter(prefix="/v1/me", tags=["preferencias de alertas"])
 
-_cliente = requiere_rol("CLIENTE_FINAL")
+_dueno = requiere_rol("DUENO_NAVE")
 
 
 def _obtener(db: Session, actual: UsuarioActual) -> ConfiguracionAlertas:
@@ -21,14 +21,14 @@ def _obtener(db: Session, actual: UsuarioActual) -> ConfiguracionAlertas:
 
 
 @router.get("/alertas", response_model=ConfigAlertasIO)
-def ver_preferencias(actual: UsuarioActual = Depends(_cliente), db: Session = Depends(db_tenant)):
+def ver_preferencias(actual: UsuarioActual = Depends(_dueno), db: Session = Depends(db_tenant)):
     return _obtener(db, actual)
 
 
 @router.put("/alertas", response_model=ConfigAlertasIO)
 def guardar_preferencias(
     datos: ConfigAlertasIO,
-    actual: UsuarioActual = Depends(_cliente),
+    actual: UsuarioActual = Depends(_dueno),
     db: Session = Depends(db_tenant),
 ):
     cfg = _obtener(db, actual)

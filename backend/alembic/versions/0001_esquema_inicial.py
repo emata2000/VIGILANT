@@ -69,7 +69,7 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.CheckConstraint("rol = 'SUPER_ADMIN' OR tenant_id IS NOT NULL", name="tenant_requerido"),
-        sa.CheckConstraint("rol IN ('SUPER_ADMIN', 'TENANT_ADMIN', 'CLIENTE_FINAL', 'GUARDIA')"),
+        sa.CheckConstraint("rol IN ('SUPER_ADMIN', 'ADMINISTRADOR', 'DUENO_NAVE', 'GUARDIA')"),
         sa.CheckConstraint(
             "telefono_whatsapp IS NULL OR telefono_whatsapp ~ '^\\+[1-9][0-9]{7,14}$'",
             name="telefono_e164",

@@ -91,7 +91,7 @@ def test_emergencia_sin_gps_tambien_avisa(client, parque, notificador):
 def test_mute_usa_la_hora_local_del_tenant(client, parque, notificador):
     h = parque["h"]
     r = client.put(
-        "/v1/clientes/me/alertas",
+        "/v1/me/alertas",
         headers=h["cliente"],
         json={"modo_mute_activo": True, "mute_inicio_hora": "22:00", "mute_fin_hora": "06:00"},
     )

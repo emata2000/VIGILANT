@@ -38,7 +38,7 @@ def listar_tenants(
 @router.post("/usuarios", response_model=UsuarioOut, status_code=201)
 def crear_usuario(
     datos: UsuarioIn,
-    actual: UsuarioActual = Depends(requiere_rol("SUPER_ADMIN", "TENANT_ADMIN")),
+    actual: UsuarioActual = Depends(requiere_rol("SUPER_ADMIN", "ADMINISTRADOR")),
     db: Session = Depends(db_tenant),
 ):
     if actual.rol == "SUPER_ADMIN":
@@ -60,7 +60,7 @@ def crear_usuario(
         db.flush()
     except IntegrityError as e:
         raise HTTPException(status.HTTP_409_CONFLICT, "Ya existe un usuario con ese email") from e
-    if u.rol == "CLIENTE_FINAL":
+    if u.rol == "DUENO_NAVE":
         # Toda cuenta de cliente nace con preferencias por defecto (evita prefs nulas).
         db.add(ConfiguracionAlertas(cliente_id=u.id, tenant_id=tenant_id))
     db.commit()
@@ -71,7 +71,7 @@ def crear_usuario(
 @router.get("/usuarios", response_model=list[UsuarioOut])
 def listar_usuarios(
     rol: str | None = None,
-    _: UsuarioActual = Depends(requiere_rol("SUPER_ADMIN", "TENANT_ADMIN")),
+    _: UsuarioActual = Depends(requiere_rol("SUPER_ADMIN", "ADMINISTRADOR")),
     db: Session = Depends(db_tenant),
 ):
     q = select(Usuario).order_by(Usuario.id)

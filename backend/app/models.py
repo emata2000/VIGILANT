@@ -19,7 +19,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-ROLES = ("SUPER_ADMIN", "TENANT_ADMIN", "CLIENTE_FINAL", "GUARDIA")
+ROLES = ("SUPER_ADMIN", "ADMINISTRADOR", "DUENO_NAVE", "GUARDIA")
 TIPOS_EVENTO = ("RUTINA_PASO", "ALERTA_EMERGENCIA")
 # Estado del reporte respecto a las notificaciones en tiempo real.
 ESTADOS_NOTIFICACION = (

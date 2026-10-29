@@ -116,7 +116,7 @@ def listar_reportes(
     q = select(ReporteGuardia).order_by(ReporteGuardia.timestamp_campo.desc()).limit(limite)
     if actual.rol == "GUARDIA":
         q = q.where(ReporteGuardia.guardia_id == actual.id)
-    elif actual.rol == "CLIENTE_FINAL":
+    elif actual.rol == "DUENO_NAVE":
         q = q.join(BodegaGeocerca, BodegaGeocerca.id == ReporteGuardia.bodega_detectada_id).where(
             BodegaGeocerca.cliente_id == actual.id
         )

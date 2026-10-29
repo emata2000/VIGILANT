@@ -10,7 +10,7 @@ from app.services.geo import geojson_a_ewkt, geom_a_geojson, punto_a_coordenada
 
 router = APIRouter(prefix="/v1", tags=["geocercas"])
 
-_admin = requiere_rol("TENANT_ADMIN")
+_admin = requiere_rol("ADMINISTRADOR")
 
 
 def _geocerca_out(b: BodegaGeocerca) -> GeocercaOut:
@@ -28,8 +28,8 @@ def _validar_cliente(db: Session, cliente_id: int | None) -> None:
     if cliente_id is None:
         return
     rol = db.scalar(select(Usuario.rol).where(Usuario.id == cliente_id))  # RLS: mismo tenant
-    if rol != "CLIENTE_FINAL":
-        raise HTTPException(422, "cliente_id debe ser un CLIENTE_FINAL de tu empresa")
+    if rol != "DUENO_NAVE":
+        raise HTTPException(422, "cliente_id debe ser un DUENO_NAVE de tu empresa")
 
 
 @router.post("/geocercas", response_model=GeocercaOut, status_code=201)
@@ -58,7 +58,7 @@ def listar_geocercas(
     actual: UsuarioActual = Depends(usuario_actual), db: Session = Depends(db_tenant)
 ):
     q = select(BodegaGeocerca).order_by(BodegaGeocerca.id)
-    if actual.rol == "CLIENTE_FINAL":
+    if actual.rol == "DUENO_NAVE":
         q = q.where(BodegaGeocerca.cliente_id == actual.id)
     return [_geocerca_out(b) for b in db.scalars(q)]
 
@@ -123,7 +123,7 @@ def crear_punto(
 
 @router.get("/puntos-control", response_model=list[PuntoControlOut])
 def listar_puntos(
-    _: UsuarioActual = Depends(requiere_rol("TENANT_ADMIN", "GUARDIA")),
+    _: UsuarioActual = Depends(requiere_rol("ADMINISTRADOR", "GUARDIA")),
     db: Session = Depends(db_tenant),
 ):
     """La app del guardia descarga esta lista al iniciar turno para trabajar sin señal."""

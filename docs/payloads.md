@@ -118,9 +118,9 @@ y deja los demás para revisión.
 }
 ```
 
-## 7. Preferencias del cliente final
+## 7. Preferencias del dueño de nave
 
-`GET /v1/clientes/me/alertas` y `PUT /v1/clientes/me/alertas`:
+`GET /v1/me/alertas` y `PUT /v1/me/alertas`:
 
 ```json
 {

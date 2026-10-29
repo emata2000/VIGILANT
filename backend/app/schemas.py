@@ -6,7 +6,7 @@ from typing import Annotated, Literal
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, EmailStr, Field, field_validator
 
-Rol = Literal["SUPER_ADMIN", "TENANT_ADMIN", "CLIENTE_FINAL", "GUARDIA"]
+Rol = Literal["SUPER_ADMIN", "ADMINISTRADOR", "DUENO_NAVE", "GUARDIA"]
 TipoEvento = Literal["RUTINA_PASO", "ALERTA_EMERGENCIA"]
 Lat = Annotated[float, Field(ge=-90, le=90)]
 Lng = Annotated[float, Field(ge=-180, le=180)]
@@ -64,7 +64,7 @@ class UsuarioIn(BaseModel):
     password: str = Field(min_length=8)
     nombre: str = Field(max_length=100)
     telefono_whatsapp: str | None = Field(None, pattern=r"^\+[1-9][0-9]{7,14}$")
-    rol: Literal["TENANT_ADMIN", "CLIENTE_FINAL", "GUARDIA"]
+    rol: Literal["ADMINISTRADOR", "DUENO_NAVE", "GUARDIA"]
     tenant_id: int | None = Field(
         None, description="Solo SUPER_ADMIN lo indica; los demás crean en su propio tenant."
     )
@@ -204,7 +204,7 @@ class UrlSubidaOut(BaseModel):
     expira_en_segundos: int
 
 
-# ---------- Preferencias de alertas (cliente final) ----------
+# ---------- Preferencias de alertas (dueño de nave) ----------
 
 
 class ConfigAlertasIO(BaseModel):
