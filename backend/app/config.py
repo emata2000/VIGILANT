@@ -27,10 +27,43 @@ class Settings(BaseSettings):
 
     s3_bucket: str = "vigilant-evidencias"
     s3_endpoint_url: str | None = None
+    # URL con la que el navegador o el teléfono llega al bucket (para las URLs prefirmadas).
+    # Vacía = la misma que S3_ENDPOINT_URL. En Docker la interna es http://minio:9000.
+    s3_endpoint_publico: str | None = None
     s3_region: str = "us-east-1"
     s3_access_key: str | None = None
     s3_secret_key: str | None = None
     s3_url_minutos: int = 15
+
+    # Orígenes del panel web que pueden llamar a la API desde el navegador (CORS).
+    # En producción, la URL pública del panel, ej. ["https://app.vigilant.mx"].
+    cors_origenes: list[str] = ["http://localhost:5173"]
+    # Carpeta con la app web compilada (web/dist). Si existe, la API también sirve el panel
+    # en el mismo dominio (un solo servicio en el hosting gratuito).
+    web_dir: str | None = None
+    # Token para que un cron externo dispare tareas periódicas (resumen matutino) cuando
+    # no hay worker. Vacío = endpoint desactivado.
+    tareas_token: str | None = None
+    # Si no existe ningún SUPER_ADMIN, se crea al arrancar con estos datos (útil en hosting
+    # sin consola). Después de crearlo se pueden borrar.
+    superadmin_email: str | None = None
+    superadmin_password: str | None = None
+
+    # URL pública del panel; las notificaciones push abren esta dirección.
+    panel_url: str = "http://localhost:5173"
+
+    # Firebase Cloud Messaging (push al navegador y a la app Android).
+    # Cuenta de servicio: el JSON completo o la ruta al archivo.
+    firebase_credenciales: str | None = None
+    # Configuración web de Firebase (JSON de "Configuración del SDK") y clave VAPID.
+    firebase_web_config: str | None = None
+    firebase_vapid_key: str | None = None
+
+    # WhatsApp Cloud API de Meta.
+    whatsapp_token: str | None = None
+    whatsapp_phone_id: str | None = None
+    whatsapp_api_version: str = "v23.0"
+    whatsapp_idioma: str = "es_MX"
 
 
 @lru_cache

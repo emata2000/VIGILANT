@@ -11,10 +11,12 @@ respetando su horario de silencio.
 | --- | --- |
 | Esquema de base de datos (PostgreSQL + PostGIS, aislamiento por tenant con RLS) | Listo |
 | API REST (FastAPI) | Listo: login, usuarios, geocercas, puntos de control, reportes, lotes offline, preferencias |
-| Motor de alertas y mute (cola ARQ sobre Redis) | Listo, con envíos simulados en el log |
-| Envío real por Firebase y WhatsApp Cloud API | Pendiente |
-| App del guardia (Kotlin) | Pendiente |
-| Panel web | Pendiente |
+| Motor de alertas y mute (cola ARQ sobre Redis, o en la misma petición en hosting gratuito) | Listo |
+| Notificaciones push (Firebase) | Listo. WhatsApp (Meta) programado pero apagado hasta configurar sus llaves |
+| Resumen matutino de rondines silenciados | Listo |
+| Publicación gratuita (Render + Supabase + Firebase) | Lista, ver [`docs/despliegue.md`](docs/despliegue.md) |
+| App web (todos los roles, incluida la vista del guardia para teléfono) | Listo, ver [`web/README.md`](web/README.md) |
+| App Android nativa del guardia | Fase 2 |
 
 ## Roles
 
@@ -36,6 +38,7 @@ backend/            API FastAPI, worker de alertas, migraciones y pruebas
   app/schemas.py    Payloads JSON (contrato con la app)
   app/services/     Geocercas, reportes, motor de alertas, almacenamiento
   alembic/          Migraciones (incluye las políticas RLS)
+web/                App web (React + Vite) para todos los roles
 docs/payloads.md    Ejemplos de los payloads de la app
 docker-compose.yml  Postgres+PostGIS, Redis, MinIO, API y worker
 ```
@@ -49,7 +52,14 @@ docker compose up --build
 docker compose exec api python -m app.cli crear-superadmin root@vigilant.mx 'una-clave-segura'
 ```
 
-Abre `http://localhost:8000/docs` para probar la API.
+Abre `http://localhost:8000/docs` para probar la API. Para que el panel pueda subir fotos,
+crea el bucket `vigilant-evidencias` en la consola de MinIO (`http://localhost:9001`).
+
+App web (en otra terminal):
+
+```bash
+cd web && npm install && npm run dev     # http://localhost:5173
+```
 
 Sin Docker (necesitas PostgreSQL 16 con PostGIS y Redis):
 
@@ -58,6 +68,7 @@ cd backend
 cp .env.example .env        # y ajusta los valores
 uv sync
 uv run alembic upgrade head
+uv run python -m app.cli crear-bucket   # bucket de fotos con CORS para el panel
 uv run uvicorn app.main:app --reload
 uv run arq app.worker.WorkerSettings    # en otra terminal
 ```

@@ -1,10 +1,11 @@
 import uuid
-from datetime import datetime, time
+from datetime import date, datetime, time
 
 from geoalchemy2 import Geometry
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
+    Date,
     DateTime,
     Float,
     ForeignKey,
@@ -209,7 +210,23 @@ class NotificacionEnviada(Base):
     )
 
 
-# Tablas con RLS por tenant_id (tenants usa su propio id).
+class ResumenEnviado(Base):
+    """Un resumen matutino por cliente y día local; la restricción única evita repetirlo."""
+
+    __tablename__ = "resumenes_enviados"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenants.id", ondelete="CASCADE"))
+    cliente_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id", ondelete="CASCADE"))
+    fecha: Mapped[date] = mapped_column(Date)
+    rondines: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (UniqueConstraint("cliente_id", "fecha"),)
+
+
+# Tablas con RLS por tenant_id (tenants usa su propio id). Las tablas de migraciones
+# posteriores a la 0001 activan su RLS en su propia migración.
 TABLAS_TENANT = (
     "usuarios",
     "dispositivos_push",
