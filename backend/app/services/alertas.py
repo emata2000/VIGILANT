@@ -175,6 +175,11 @@ def procesar_reporte(
         max_retraso_rutina_min=s.rutina_max_retraso_min,
     )
 
+    if not getattr(notificador, "whatsapp_disponible", True):
+        decision.envios = [e for e in decision.envios if e.canal != "WHATSAPP"]
+        if not decision.envios and decision.estado == "ENVIADO":
+            decision.estado = "SIN_DESTINATARIO"
+
     lugar = bodega.nombre_bodega if bodega else "área común del parque"
     evidencia = ""
     if url_evidencia is not None:

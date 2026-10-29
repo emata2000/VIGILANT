@@ -3,6 +3,7 @@ import { api, type PuntoControl, type Reporte, type TipoEvento } from '../api'
 import { fechaHora } from '../fechas'
 import { useSesion } from '../sesion'
 import { descartar, encolar, enviar, esFalloTemporal, pendientes, sincronizar, type Pendiente } from './cola'
+import { useConduccion } from './conduccion'
 import { EscanerQr } from './EscanerQr'
 import { comprimirFoto, obtenerPosicion, type Posicion } from './medios'
 
@@ -36,6 +37,9 @@ export function Guardia() {
   const [escaneando, setEscaneando] = useState(false)
   const [borrador, setBorrador] = useState<Borrador | null>(null)
   const [aviso, setAviso] = useState<{ texto: string; tipo: 'ok' | 'error' | 'info' } | null>(null)
+  const { velocidadKmh, bloqueado } = useConduccion(puntos)
+  const abrirEmergencia = () =>
+    setBorrador({ tipo: 'ALERTA_EMERGENCIA', codigo: null, descripcion: '', foto: null, fotoUrl: null })
 
   const refrescar = useCallback(async () => {
     setCola(await pendientes())
@@ -116,7 +120,7 @@ export function Guardia() {
       {aviso && <div className={`aviso aviso-${aviso.tipo}`}>{aviso.texto}</div>}
 
       <main className="guardia-cuerpo">
-        <button className="boton-emergencia" onClick={() => setBorrador({ tipo: 'ALERTA_EMERGENCIA', codigo: null, descripcion: '', foto: null, fotoUrl: null })}>
+        <button className="boton-emergencia" onClick={abrirEmergencia}>
           EMERGENCIA
         </button>
         <div className="botones-guardia">
@@ -179,6 +183,7 @@ export function Guardia() {
         </section>
       </main>
 
+      {bloqueado && !borrador && <ModoConduccion velocidadKmh={velocidadKmh} onEmergencia={abrirEmergencia} />}
       {escaneando && <EscanerQr onCodigo={alEscanear} onCerrar={() => setEscaneando(false)} />}
       {borrador && (
         <FormReporte
@@ -325,6 +330,42 @@ function FormReporte({
           {enviando ? 'Enviando…' : emergencia ? 'Enviar emergencia' : 'Enviar rondín'}
         </button>
       </form>
+    </div>
+  )
+}
+
+/** Pantalla bloqueada mientras el vehículo se mueve. La emergencia sigue disponible
+ * manteniendo presionado el botón 2 segundos, para no dispararla por accidente. */
+function ModoConduccion({ velocidadKmh, onEmergencia }: { velocidadKmh: number; onEmergencia: () => void }) {
+  const temporizador = useRef<number | null>(null)
+  const [presionando, setPresionando] = useState(false)
+  const soltar = () => {
+    if (temporizador.current) clearTimeout(temporizador.current)
+    temporizador.current = null
+    setPresionando(false)
+  }
+  return (
+    <div className="conduccion" role="alert">
+      <div className="velocidad">{Math.round(velocidadKmh)} km/h</div>
+      <h2>Modo conducción</h2>
+      <p>Detén el vehículo para reportar. La pantalla se desbloquea sola a los 3 segundos de estar detenido.</p>
+      <button
+        className={`emergencia-sostenida ${presionando ? 'presionando' : ''}`}
+        onPointerDown={() => {
+          setPresionando(true)
+          temporizador.current = window.setTimeout(() => {
+            soltar()
+            navigator.vibrate?.(200)
+            onEmergencia()
+          }, 2000)
+        }}
+        onPointerUp={soltar}
+        onPointerLeave={soltar}
+        onPointerCancel={soltar}
+        onContextMenu={(e) => e.preventDefault()}
+      >
+        Mantén presionado para EMERGENCIA
+      </button>
     </div>
   )
 }

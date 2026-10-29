@@ -5,6 +5,10 @@ import { useCarga } from '../useCarga'
 export function Alertas() {
   const { datos, error, setDatos } = useCarga(() => api<ConfigAlertas>('/v1/me/alertas'))
   const [estado, setEstado] = useState<string | null>(null)
+  const wa = useCarga(() =>
+    api<{ whatsapp_habilitado: boolean }>('/v1/push/config').then((c) => c.whatsapp_habilitado).catch(() => false),
+  )
+  const conWhatsapp = wa.datos === true
 
   if (!datos) return error ? <p className="error">{error}</p> : <p className="tenue">Cargando…</p>
   const set = (c: Partial<ConfigAlertas>) => {
@@ -32,16 +36,17 @@ export function Alertas() {
   return (
     <form className="formulario ancho" onSubmit={guardar}>
       <h1>Alertas</h1>
+      <p className="ayuda">Para recibir avisos en este dispositivo, toca “🔔 Activar avisos” arriba.</p>
       <section className="panel">
         <h2>Emergencias</h2>
         <p className="ayuda">Las emergencias siempre se envían, aunque el horario de silencio esté activo.</p>
         {casilla('recibir_emergencia_push', 'Notificación en el teléfono')}
-        {casilla('recibir_emergencia_whatsapp', 'WhatsApp')}
+        {conWhatsapp && casilla('recibir_emergencia_whatsapp', 'WhatsApp')}
       </section>
       <section className="panel">
         <h2>Rondines</h2>
         {casilla('recibir_rutina_push', 'Notificación en el teléfono')}
-        {casilla('recibir_rutina_whatsapp', 'WhatsApp')}
+        {conWhatsapp && casilla('recibir_rutina_whatsapp', 'WhatsApp')}
       </section>
       <section className="panel">
         <h2>Horario de silencio</h2>
@@ -66,7 +71,9 @@ export function Alertas() {
             />
           </label>
         </div>
-        <p className="ayuda">Los rondines silenciados quedan en la bitácora.</p>
+        <p className="ayuda">
+          Los rondines silenciados quedan en la bitácora y al terminar el horario te llega un resumen de la noche.
+        </p>
       </section>
       <div className="fila">
         <button className="btn primario">Guardar</button>

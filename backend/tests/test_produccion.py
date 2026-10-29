@@ -107,7 +107,12 @@ def test_texto_resumen_singular():
 
 def test_config_push_publica(client, monkeypatch):
     r = client.get("/v1/push/config")
-    assert r.json() == {"habilitado": False, "firebase": None, "vapid_key": None}
+    assert r.json() == {
+        "habilitado": False,
+        "whatsapp_habilitado": False,
+        "firebase": None,
+        "vapid_key": None,
+    }
     s = get_settings()
     monkeypatch.setattr(s, "firebase_web_config", '{"apiKey": "AIza", "projectId": "p"}')
     monkeypatch.setattr(s, "firebase_vapid_key", "BKx")
@@ -127,3 +132,41 @@ def test_urls_prefirmadas_usan_endpoint_publico(monkeypatch):
         assert storage.url_lectura("t1/a.jpg").startswith("https://s3.vigilant.mx/")
     finally:
         storage._cliente.cache_clear()
+
+
+class SoloPush(NotificadorMemoria):
+    whatsapp_disponible = False
+
+
+def test_sin_whatsapp_la_emergencia_va_solo_por_push(client, parque):
+    from app.services.notificadores import configurar_notificador
+
+    n = SoloPush()
+    configurar_notificador(n)
+    r = client.post(
+        "/v1/reportes",
+        headers=parque["h"]["guardia"],
+        json={
+            "uuid_cliente": str(uuid.uuid4()),
+            "tipo_evento": "ALERTA_EMERGENCIA",
+            "timestamp_campo": datetime.now(UTC).isoformat(),
+            "ubicacion": DENTRO_8,
+        },
+    )
+    assert r.json()["estado_notificacion"] == "ENVIADO"
+    assert n.whatsapp == []
+    assert len(n.push) == 2  # dueño y administrador
+    with sesion(bypass_rls=True) as db:
+        from app.models import NotificacionEnviada
+
+        canales = set(db.scalars(select(NotificacionEnviada.canal)))
+    assert canales == {"PUSH"}
+
+
+def test_tarea_resumenes_requiere_token(client, monkeypatch):
+    assert client.post("/v1/tareas/resumenes").status_code == 403  # sin token configurado
+    monkeypatch.setattr(get_settings(), "tareas_token", "secreto-cron")
+    assert client.post("/v1/tareas/resumenes", headers={"X-Tarea-Token": "otro"}).status_code == 403
+    r = client.post("/v1/tareas/resumenes", headers={"X-Tarea-Token": "secreto-cron"})
+    assert r.status_code == 200
+    assert r.json() == {"resumenes_enviados": 0}

@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { NOMBRE_ROL, type Rol } from '../api'
 import { useSesion } from '../sesion'
+import { BotonAvisos } from './BotonAvisos'
 
 const MENU: Record<Rol, { a: string; texto: string }[]> = {
   SUPER_ADMIN: [{ a: '/empresas', texto: 'Empresas' }],
@@ -36,6 +37,7 @@ export function Marco() {
           ))}
         </nav>
         <div className="quien">
+          {sesion.rol !== 'SUPER_ADMIN' && <BotonAvisos usuarioId={sesion.usuario_id} />}
           <span className="etiqueta">
             {NOMBRE_ROL[sesion.rol]}
             {sesion.empresa ? ` · ${sesion.empresa}` : ''}

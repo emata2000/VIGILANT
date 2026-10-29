@@ -127,7 +127,7 @@ def _resumir(
                 algo = True
             except Exception as e:  # un canal caído no detiene a los demás
                 log.warning("Resumen push a %s falló: %s", cfg.cliente_id, e)
-    if cfg.recibir_rutina_whatsapp:
+    if cfg.recibir_rutina_whatsapp and getattr(notificador, "whatsapp_disponible", True):
         telefono = db.scalar(select(Usuario.telefono_whatsapp).where(Usuario.id == cfg.cliente_id))
         if telefono:
             try:

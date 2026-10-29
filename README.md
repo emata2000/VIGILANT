@@ -11,8 +11,10 @@ respetando su horario de silencio.
 | --- | --- |
 | Esquema de base de datos (PostgreSQL + PostGIS, aislamiento por tenant con RLS) | Listo |
 | API REST (FastAPI) | Listo: login, usuarios, geocercas, puntos de control, reportes, lotes offline, preferencias |
-| Motor de alertas y mute (cola ARQ sobre Redis) | Listo, con envíos simulados en el log |
-| Envío real por Firebase y WhatsApp Cloud API | Pendiente |
+| Motor de alertas y mute (cola ARQ sobre Redis, o en la misma petición en hosting gratuito) | Listo |
+| Notificaciones push (Firebase) | Listo. WhatsApp (Meta) programado pero apagado hasta configurar sus llaves |
+| Resumen matutino de rondines silenciados | Listo |
+| Publicación gratuita (Render + Supabase + Firebase) | Lista, ver [`docs/despliegue.md`](docs/despliegue.md) |
 | App web (todos los roles, incluida la vista del guardia para teléfono) | Listo, ver [`web/README.md`](web/README.md) |
 | App Android nativa del guardia | Fase 2 |
 

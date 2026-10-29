@@ -38,6 +38,17 @@ class Settings(BaseSettings):
     # Orígenes del panel web que pueden llamar a la API desde el navegador (CORS).
     # En producción, la URL pública del panel, ej. ["https://app.vigilant.mx"].
     cors_origenes: list[str] = ["http://localhost:5173"]
+    # Carpeta con la app web compilada (web/dist). Si existe, la API también sirve el panel
+    # en el mismo dominio (un solo servicio en el hosting gratuito).
+    web_dir: str | None = None
+    # Token para que un cron externo dispare tareas periódicas (resumen matutino) cuando
+    # no hay worker. Vacío = endpoint desactivado.
+    tareas_token: str | None = None
+    # Si no existe ningún SUPER_ADMIN, se crea al arrancar con estos datos (útil en hosting
+    # sin consola). Después de crearlo se pueden borrar.
+    superadmin_email: str | None = None
+    superadmin_password: str | None = None
+
     # URL pública del panel; las notificaciones push abren esta dirección.
     panel_url: str = "http://localhost:5173"
 

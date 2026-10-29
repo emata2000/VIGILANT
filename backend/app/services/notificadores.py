@@ -213,6 +213,8 @@ class NotificadorReal:
     def __init__(self, push: PushFirebase | None, whatsapp: WhatsAppMeta | None):
         self.push = push
         self.whatsapp = whatsapp
+        # Sin WhatsApp configurado (lanzamiento solo con push) ese canal ni se intenta.
+        self.whatsapp_disponible = whatsapp is not None
 
     def enviar_push(self, tokens: list[str], titulo: str, cuerpo: str, datos: dict) -> list[str]:
         if self.push is None:

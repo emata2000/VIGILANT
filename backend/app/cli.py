@@ -37,19 +37,23 @@ def crear_bucket(origenes: list[str]) -> None:
         s3.head_bucket(Bucket=s.s3_bucket)
     except s3.exceptions.ClientError:
         s3.create_bucket(Bucket=s.s3_bucket)
-    s3.put_bucket_cors(
-        Bucket=s.s3_bucket,
-        CORSConfiguration={
-            "CORSRules": [
-                {
-                    "AllowedOrigins": origenes or s.cors_origenes,
-                    "AllowedMethods": ["PUT", "GET"],
-                    "AllowedHeaders": ["*"],
-                    "MaxAgeSeconds": 3600,
-                }
-            ]
-        },
-    )
+    try:
+        s3.put_bucket_cors(
+            Bucket=s.s3_bucket,
+            CORSConfiguration={
+                "CORSRules": [
+                    {
+                        "AllowedOrigins": origenes or s.cors_origenes,
+                        "AllowedMethods": ["PUT", "GET"],
+                        "AllowedHeaders": ["*"],
+                        "MaxAgeSeconds": 3600,
+                    }
+                ]
+            },
+        )
+    except s3.exceptions.ClientError as e:
+        # Supabase Storage no permite configurar CORS por S3 (ya acepta cualquier origen).
+        print(f"No se configuró CORS del bucket ({e.response['Error'].get('Code')}); revisa a mano")
     print(f"Bucket listo: {s.s3_bucket}")
 
 
