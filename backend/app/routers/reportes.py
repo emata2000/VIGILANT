@@ -1,14 +1,16 @@
 from datetime import datetime
 
+from botocore.exceptions import BotoCoreError
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.deps import UsuarioActual, db_tenant, requiere_rol, usuario_actual
-from app.models import BodegaGeocerca, ReporteGuardia
+from app.models import BodegaGeocerca, ReporteGuardia, ReporteMultimedia, Usuario
 from app.schemas import (
     LoteIn,
     LoteOut,
+    MultimediaOut,
     ReporteIn,
     ReporteOut,
     ResultadoLote,
@@ -25,7 +27,12 @@ router = APIRouter(prefix="/v1", tags=["reportes"])
 _guardia = requiere_rol("GUARDIA")
 
 
-def _out(r: ReporteGuardia, duplicado: bool = False) -> ReporteOut:
+def _out(
+    r: ReporteGuardia,
+    duplicado: bool = False,
+    guardia_nombre: str | None = None,
+    multimedia: list[MultimediaOut] | None = None,
+) -> ReporteOut:
     return ReporteOut(
         id=r.id,
         uuid_cliente=r.uuid_cliente,
@@ -39,6 +46,8 @@ def _out(r: ReporteGuardia, duplicado: bool = False) -> ReporteOut:
         punto_control_id=r.punto_control_id,
         estado_notificacion=r.estado_notificacion,
         descripcion=r.descripcion,
+        guardia_nombre=guardia_nombre,
+        multimedia=multimedia or [],
         duplicado=duplicado,
     )
 
@@ -128,4 +137,23 @@ def listar_reportes(
         q = q.where(ReporteGuardia.bodega_detectada_id == bodega_id)
     if tipo_evento:
         q = q.where(ReporteGuardia.tipo_evento == tipo_evento)
-    return [_out(r) for r in db.scalars(q)]
+    reportes = db.scalars(q).all()
+    ids = [r.id for r in reportes]
+    nombres = dict(
+        db.execute(
+            select(Usuario.id, Usuario.nombre).where(
+                Usuario.id.in_({r.guardia_id for r in reportes if r.guardia_id})
+            )
+        ).all()
+    )
+    evidencias: dict[int, list[MultimediaOut]] = {}
+    for m in db.scalars(select(ReporteMultimedia).where(ReporteMultimedia.reporte_id.in_(ids))):
+        try:
+            url = storage.url_lectura(m.storage_key, segundos=3600)
+        except BotoCoreError:  # sin credenciales de S3: la bitácora sigue funcionando sin fotos
+            continue
+        evidencias.setdefault(m.reporte_id, []).append(MultimediaOut(tipo=m.tipo, url=url))
+    return [
+        _out(r, guardia_nombre=nombres.get(r.guardia_id), multimedia=evidencias.get(r.id))
+        for r in reportes
+    ]

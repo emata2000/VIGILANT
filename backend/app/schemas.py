@@ -81,6 +81,15 @@ class UsuarioOut(BaseModel):
     status: str
 
 
+class UsuarioCambios(BaseModel):
+    """Campos que el administrador puede cambiar. Los omitidos quedan igual."""
+
+    nombre: str | None = Field(None, max_length=100)
+    telefono_whatsapp: str | None = Field(None, pattern=r"^\+[1-9][0-9]{7,14}$")
+    status: Literal["active", "inactive"] | None = None
+    password: str | None = Field(None, min_length=8)
+
+
 class DispositivoIn(BaseModel):
     fcm_token: str = Field(max_length=255)
     plataforma: Literal["android", "ios", "web"] = "android"
@@ -161,6 +170,11 @@ class ReporteIn(BaseModel):
     multimedia: list[MultimediaIn] = Field(default_factory=list, max_length=10)
 
 
+class MultimediaOut(BaseModel):
+    tipo: str
+    url: str = Field(description="URL temporal de lectura (prefirmada)")
+
+
 class ReporteOut(BaseModel):
     id: int
     uuid_cliente: uuid.UUID
@@ -174,6 +188,8 @@ class ReporteOut(BaseModel):
     punto_control_id: int | None
     estado_notificacion: str
     descripcion: str | None
+    guardia_nombre: str | None = None
+    multimedia: list[MultimediaOut] = Field(default_factory=list)
     duplicado: bool = Field(False, description="True si el reporte ya existía (reenvío)")
 
 

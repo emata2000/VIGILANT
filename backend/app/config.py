@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     s3_secret_key: str | None = None
     s3_url_minutos: int = 15
 
+    # Orígenes del panel web que pueden llamar a la API desde el navegador (CORS).
+    # En producción, la URL pública del panel, ej. ["https://app.vigilant.mx"].
+    cors_origenes: list[str] = ["http://localhost:5173"]
+
 
 @lru_cache
 def get_settings() -> Settings:
