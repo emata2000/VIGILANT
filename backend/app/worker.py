@@ -5,13 +5,14 @@ Ejecutar con:  uv run arq app.worker.WorkerSettings
 
 import asyncio
 
-from arq import Retry
+from arq import Retry, cron
 from arq.connections import RedisSettings
 
 from app.config import get_settings
 from app.db import sesion
 from app.models import ReporteGuardia
 from app.services.alertas import procesar_reporte
+from app.services.resumen import enviar_resumenes
 from app.services.storage import url_lectura
 
 
@@ -31,7 +32,13 @@ async def tarea_procesar_reporte(ctx, tenant_id: int, reporte_id: int) -> str:
     return estado
 
 
+async def tarea_resumenes(ctx) -> int:
+    """Resumen matutino de rondines silenciados (cada 5 minutos revisa a quién le toca)."""
+    return await asyncio.to_thread(enviar_resumenes)
+
+
 class WorkerSettings:
     functions = [tarea_procesar_reporte]
+    cron_jobs = [cron(tarea_resumenes, minute=set(range(0, 60, 5)), run_at_startup=True)]
     redis_settings = RedisSettings.from_dsn(get_settings().redis_url)
     max_tries = 6

@@ -1,0 +1,42 @@
+# Blueprint de Render: un solo servicio web gratuito (API + panel).
+# En Render: New > Blueprint > elige este repositorio. Las variables con sync: false
+# se piden al crear el servicio (ver docs/despliegue.md).
+services:
+  - type: web
+    name: vigilant
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /salud
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: TAREAS_TOKEN
+        generateValue: true
+      - key: PANEL_URL
+        sync: false
+      - key: CORS_ORIGENES
+        sync: false
+      - key: S3_ENDPOINT_URL
+        sync: false
+      - key: S3_REGION
+        sync: false
+      - key: S3_ACCESS_KEY
+        sync: false
+      - key: S3_SECRET_KEY
+        sync: false
+      - key: S3_BUCKET
+        value: vigilant-evidencias
+      - key: SUPERADMIN_EMAIL
+        sync: false
+      - key: SUPERADMIN_PASSWORD
+        sync: false
+      - key: FIREBASE_CREDENCIALES
+        sync: false
+      - key: FIREBASE_WEB_CONFIG
+        sync: false
+      - key: FIREBASE_VAPID_KEY
+        sync: false

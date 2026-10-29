@@ -6,7 +6,14 @@ from sqlalchemy.orm import Session
 
 from app.deps import UsuarioActual, db_tenant, requiere_rol, usuario_actual
 from app.models import ConfiguracionAlertas, DispositivoPush, Tenant, Usuario
-from app.schemas import DispositivoIn, TenantIn, TenantOut, UsuarioIn, UsuarioOut
+from app.schemas import (
+    DispositivoIn,
+    TenantIn,
+    TenantOut,
+    UsuarioCambios,
+    UsuarioIn,
+    UsuarioOut,
+)
 from app.security import hash_password
 
 router = APIRouter(prefix="/v1", tags=["administración"])
@@ -78,6 +85,32 @@ def listar_usuarios(
     if rol:
         q = q.where(Usuario.rol == rol)
     return db.scalars(q).all()
+
+
+@router.patch("/usuarios/{usuario_id}", response_model=UsuarioOut)
+def cambiar_usuario(
+    usuario_id: int,
+    datos: UsuarioCambios,
+    actual: UsuarioActual = Depends(requiere_rol("SUPER_ADMIN", "ADMINISTRADOR")),
+    db: Session = Depends(db_tenant),
+):
+    """Editar nombre o WhatsApp, resetear la contraseña o dar de baja (status=inactive)."""
+    u = db.get(Usuario, usuario_id)  # RLS: un administrador solo ve su empresa
+    if u is None or u.rol == "SUPER_ADMIN":
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Usuario no encontrado")
+    cambios = datos.model_dump(exclude_unset=True)
+    if u.id == actual.id and cambios.get("status") == "inactive":
+        raise HTTPException(422, "No puedes darte de baja a ti mismo")
+    for campo in ("nombre", "status"):
+        if cambios.get(campo) is not None:
+            setattr(u, campo, cambios[campo])
+    if "telefono_whatsapp" in cambios:
+        u.telefono_whatsapp = cambios["telefono_whatsapp"]
+    if cambios.get("password"):
+        u.password_hash = hash_password(cambios["password"])
+    db.commit()
+    db.refresh(u)
+    return u
 
 
 @router.post("/dispositivos", status_code=204)

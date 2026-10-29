@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime, time
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
@@ -31,7 +31,7 @@ from app.models import (
     Tenant,
     Usuario,
 )
-from app.services.notificadores import Notificador, obtener_notificador
+from app.services.notificadores import ErrorEnvio, Notificador, obtener_notificador
 
 # Decisión pendiente con el cliente: si es False (comportamiento del PRD), las emergencias
 # llegan al cliente por push y WhatsApp aunque haya apagado esos canales.
@@ -175,6 +175,11 @@ def procesar_reporte(
         max_retraso_rutina_min=s.rutina_max_retraso_min,
     )
 
+    if not getattr(notificador, "whatsapp_disponible", True):
+        decision.envios = [e for e in decision.envios if e.canal != "WHATSAPP"]
+        if not decision.envios and decision.estado == "ENVIADO":
+            decision.estado = "SIN_DESTINATARIO"
+
     lugar = bodega.nombre_bodega if bodega else "área común del parque"
     evidencia = ""
     if url_evidencia is not None:
@@ -226,6 +231,12 @@ def procesar_reporte(
     return decision
 
 
+def _borrar_tokens(db: Session, tokens: list[str] | None) -> None:
+    """Quita teléfonos o navegadores que desinstalaron la app o revocaron el permiso."""
+    if tokens:
+        db.execute(delete(DispositivoPush).where(DispositivoPush.fcm_token.in_(tokens)))
+
+
 def _enviar(
     db: Session,
     notificador: Notificador,
@@ -247,9 +258,17 @@ def _enviar(
             if not tokens:
                 return "El usuario no tiene dispositivos registrados"
             titulo, cuerpo = _textos(envio.plantilla, lugar)
-            notificador.enviar_push(
-                tokens, titulo, cuerpo, {"reporte_id": str(reporte.id), "tipo": reporte.tipo_evento}
-            )
+            try:
+                invalidos = notificador.enviar_push(
+                    tokens,
+                    titulo,
+                    cuerpo,
+                    {"reporte_id": str(reporte.id), "tipo": reporte.tipo_evento},
+                )
+            except ErrorEnvio as e:
+                _borrar_tokens(db, e.tokens_invalidos)
+                raise
+            _borrar_tokens(db, invalidos)
         else:
             telefono = db.scalar(
                 select(Usuario.telefono_whatsapp).where(Usuario.id == envio.usuario_id)
